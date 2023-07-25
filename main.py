@@ -48,12 +48,13 @@ def fix_contents(in_contents):
                 (match, match_idx) = match_time_signature(in_contents, packet_idx - previous_len, min(packet_idx, len(in_contents) - len(time_signature)), time_signature[:time_signature_bytes])
                 if not match:
                     #print("Backwards seek did not yield any results. Trying forwards seek...")
-                    if previous_packet is not None:
-                        contents += previous_packet         # Append previous packet as it seems to be okay.
-                        previous_packet = None
                     (match, match_idx) = match_time_signature(in_contents, packet_idx, len(in_contents) - len(time_signature), time_signature[:time_signature_bytes])
                     if not match:
                         time_signature_bytes -= 1
+                    else:
+                        if previous_packet is not None:
+                            contents += previous_packet  # Append previous packet as it seems to be okay.
+                            previous_packet = None
 
             if not match:
                 print("\033[31mBroken packet is non-recoverable.\033[0m")
