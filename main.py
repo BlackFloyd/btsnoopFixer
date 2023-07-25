@@ -20,16 +20,15 @@ def fix_contents(in_contents):
     previous_len = 0
     packet_counter = 0
     time_signature = in_contents[packet_idx + 16:packet_idx + 24]
-    dump(time_signature)
     while packet_idx < len(in_contents):
         broken = False
         original_length = get_4_byte_int(in_contents, packet_idx)
         included_length = get_4_byte_int(in_contents, packet_idx + 4)
         if original_length < included_length:
-            print(f"Broken packet ({packet_counter}): Original length is smaller than included length")
+            print(f"\033[01m\033[31mBroken packet ({packet_counter}): \033[0mOriginal packet length is smaller than included packet length")
             broken = True
         if included_length + packet_idx + 24 > len(in_contents):
-            print(f"Broken packet ({packet_counter}): Included packet length is greater than file size.")
+            print(f"\033[01m\033[31mBroken packet ({packet_counter}): \033[0mIncluded packet length is greater than file size.")
             broken = True
         if not broken:
             if previous_packet is not None:
@@ -40,7 +39,7 @@ def fix_contents(in_contents):
             packet_idx += included_length + 24
         else:
             time_signature_bytes = 7                        # Try to match 7 bytes from the timestamp first
-            print("Header: ", end="")
+            print("\033[01m\033[36mBroken header: \033[0m", end="")
             dump(in_contents[packet_idx:packet_idx + 24])
             match = False
             match_idx = None
@@ -57,10 +56,10 @@ def fix_contents(in_contents):
                         time_signature_bytes -= 1
 
             if not match:
-                print("Broken packet is non-recoverable.")
+                print("\033[31mBroken packet is non-recoverable.\033[0m")
                 sys.exit(2)
             else:
-                print(f"Presumed packet found with {time_signature_bytes} bytes matching the last time signature.")
+                print(f"\033[32mPresumed packet found with {time_signature_bytes} bytes matching the last time signature.\033[0m")
                 packet_idx = match_idx - 16
                 previous_packet = None
         packet_counter += 1
