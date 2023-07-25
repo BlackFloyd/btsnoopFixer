@@ -2,8 +2,6 @@
 
 import sys
 
-#time_signature = [0x00, 0xE2]
-
 
 def get_4_byte_int(data, index):
     return (data[index] << 24) + (data[index + 1] << 16) + (data[index + 2] << 8) + data[index + 3]
@@ -47,7 +45,6 @@ def fix_contents(in_contents):
             while not match and time_signature_bytes > 1:
                 (match, match_idx) = match_time_signature(in_contents, packet_idx - previous_len, min(packet_idx, len(in_contents) - len(time_signature)), time_signature[:time_signature_bytes])
                 if not match:
-                    #print("Backwards seek did not yield any results. Trying forwards seek...")
                     (match, match_idx) = match_time_signature(in_contents, packet_idx, len(in_contents) - len(time_signature), time_signature[:time_signature_bytes])
                     if not match:
                         time_signature_bytes -= 1
