@@ -61,6 +61,8 @@ def fix_contents(in_contents):
                 packet_idx = match_idx - 16
                 previous_packet = None
         packet_counter += 1
+    if previous_packet is not None:
+        contents += previous_packet
     return contents
 
 
