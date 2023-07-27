@@ -1,6 +1,6 @@
 # BT Snoop Fixer
 
-A simple tool that tries to fix broken BT Snoop logs files.
+A simple tool that tries to fix broken BT Snoop log files.
 
 ## Why?!
 
@@ -24,7 +24,7 @@ Furthermore, there are error detection methods available:
   -t, --time        Check Time Sanity
 ```
 
-These options are unsafe in rare cases but they may yield better results whenever this tool misses errors.
+These options are unsafe in rare cases, but they may yield better results whenever this tool misses errors.
 See below for a detailed description.
 
 ## How it works
