@@ -7,6 +7,10 @@ def get_4_byte_int(data, index) -> int:
     return (data[index] << 24) + (data[index + 1] << 16) + (data[index + 2] << 8) + data[index + 3]
 
 
+def get_8_byte_int(data, index) -> int:
+    return (get_4_byte_int(data, index) << 32) + get_4_byte_int(data, index + 4)
+
+
 def dump(b):
     print(''.join('{:02x}'.format(x) for x in b))
 
@@ -16,18 +20,30 @@ def fix_contents(in_contents) -> bytes:
     contents = in_contents[:packet_idx]
     previous_packet = None
     previous_len = 0
+    previous_cumulative_drops = 0
+    previous_time = 0
     packet_counter = 0
     time_signature = in_contents[packet_idx + 16:packet_idx + 24]
     while packet_idx < len(in_contents):
         broken = False
         original_length = get_4_byte_int(in_contents, packet_idx)
         included_length = get_4_byte_int(in_contents, packet_idx + 4)
+        cumulative_drops = get_4_byte_int(in_contents, 12)
+        time = get_8_byte_int(in_contents, packet_idx + 16)
+
         if original_length < included_length:
-            print(f"\033[01m\033[31mBroken packet ({packet_counter}): \033[0mOriginal packet length is smaller than included packet length")
+            print(f"\033[01m\033[31mBroken packet ({packet_counter}): \033[0mOriginal packet length is smaller than included packet length.")
             broken = True
         if included_length + packet_idx + 24 > len(in_contents):
             print(f"\033[01m\033[31mBroken packet ({packet_counter}): \033[0mIncluded packet length is greater than file size.")
             broken = True
+        if cumulative_drops < previous_cumulative_drops:
+            print(f"\033[01m\033[31mBroken packet ({packet_counter}): \033[0mCumulative drops decreased.")
+            broken = True
+        if time < previous_time:
+            print(f"\033[01m\033[31mBroken packet ({packet_counter}): \033[0mTime went backwards.")
+            broken = True
+
         if not broken:
             if previous_packet is not None:
                 contents += previous_packet
@@ -35,6 +51,8 @@ def fix_contents(in_contents) -> bytes:
             previous_len = included_length
             time_signature = in_contents[packet_idx + 16:packet_idx + 24]
             packet_idx += included_length + 24
+            previous_cumulative_drops = cumulative_drops
+            previous_time = time
         else:
             time_signature_bytes = 7
             print("\033[01m\033[36mBroken header: \033[0m", end="")

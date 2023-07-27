@@ -29,12 +29,13 @@ In that case the packet records won't line up anymore and whatever software is t
 
 ### How to detect it
 
-There are a few ways to detect those errors. This program currently uses two of them.
-Both of rely on checking the packet lengths provided by the files.
-If the file reports a packet that would exceed the file itself, that's an obvious error.
-Furthermore, this tool checks if the packet data included in the record is larger than the original packet data.
-This would also indicate an error.
-My goal is to also check the timestamps for sanity, but this should be optional as it might break as soon as a clock skew is corrected.
+There are a few ways to detect those errors:
+
+Current methods:
+* Check if the included packet size exceeds the file size
+* Check if the included packet size exceeds the original packet size
+* Check if cumulative drops decreased
+* Check timestamps for sanity
 
 ### What to do about it?
 
@@ -43,4 +44,4 @@ It will then check for the last known good timestamp it has read and try to find
 If it doesn't find one, it will assume the previous packet to be good and seek forward, again looking for such a timestamp.
 As soon as it finds another timestamp, it will discard any data that is known to be bad and realign the packet records.
 
-This method relies on assumptions and - well - guessing. But it seems to work pretty well in my environment and there's no harm in trying,
+This method relies on assumptions and - well - guessing. But it seems to work pretty well in my environment and there's no harm in trying.
