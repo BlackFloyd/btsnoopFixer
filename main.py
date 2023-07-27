@@ -86,13 +86,12 @@ def repair_file():
         print(f"Usage: {sys.argv[0]} <filename>")
         sys.exit(1)
 
-    in_file = open(sys.argv[1], 'rb')
-    in_contents = in_file.read()
+    with open(sys.argv[1], 'rb') as in_file:
+        in_contents = in_file.read()
+
     out_contents = fix_contents(in_contents)
-    out_file = open(f'{sys.argv[1]}.fixed', 'wb')
-    out_file.write(out_contents)
-    in_file.close()
-    out_file.close()
+    with open(f'{sys.argv[1]}.fixed', 'wb') as out_file:
+        out_file.write(out_contents)
 
 
 if __name__ == '__main__':
