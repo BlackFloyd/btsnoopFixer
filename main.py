@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 
 import sys
+import argparse
 
 
 def get_4_byte_int(data, index) -> int:
@@ -15,7 +16,7 @@ def dump(b):
     print(''.join('{:02x}'.format(x) for x in b))
 
 
-def fix_contents(in_contents) -> bytes:
+def fix_contents(in_contents, args) -> bytes:
     packet_idx = 8 + 4 + 4
     contents = in_contents[:packet_idx]
     previous_packet = None
@@ -31,16 +32,16 @@ def fix_contents(in_contents) -> bytes:
         cumulative_drops = get_4_byte_int(in_contents, 12)
         time = get_8_byte_int(in_contents, packet_idx + 16)
 
-        if original_length < included_length:
-            print(f"\033[01m\033[31mBroken packet ({packet_counter}): \033[0mOriginal packet length is smaller than included packet length.")
-            broken = True
         if included_length + packet_idx + 24 > len(in_contents):
             print(f"\033[01m\033[31mBroken packet ({packet_counter}): \033[0mIncluded packet length is greater than file size.")
             broken = True
-        if cumulative_drops < previous_cumulative_drops:
+        if args.length and original_length < included_length:
+            print(f"\033[01m\033[31mBroken packet ({packet_counter}): \033[0mOriginal packet length is smaller than included packet length.")
+            broken = True
+        if args.drop and cumulative_drops < previous_cumulative_drops:
             print(f"\033[01m\033[31mBroken packet ({packet_counter}): \033[0mCumulative drops decreased.")
             broken = True
-        if time < previous_time:
+        if args.time and time < previous_time:
             print(f"\033[01m\033[31mBroken packet ({packet_counter}): \033[0mTime went backwards.")
             broken = True
 
@@ -103,17 +104,22 @@ def match_time_signature(data, start, end, time_signature) -> (bool, int):
     return match, match_idx
 
 
+def parse_args():
+    parser = argparse.ArgumentParser(description="Fix broken BT Snoop files ")
+    parser.add_argument('broken_file', help="Path of the broken BT Snoop log", type=argparse.FileType('rb'))
+    parser.add_argument('destination_file', help="Path to write the fixed file to", type=argparse.FileType('wb'))
+    parser.add_argument('-l', '--length', help="Check length sanity", action="store_true")
+    parser.add_argument('-d', '--drop', help="Check drop sanity", action="store_true")
+    parser.add_argument('-t', '--time', help="Check time sanity", action="store_true")
+    return parser.parse_args()
+
+
 def repair_file():
-    if len(sys.argv) < 2:
-        print(f"Usage: {sys.argv[0]} <filename>")
-        sys.exit(1)
+    args = parse_args()
 
-    with open(sys.argv[1], 'rb') as in_file:
-        in_contents = in_file.read()
-
-    out_contents = fix_contents(in_contents)
-    with open(f'{sys.argv[1]}.fixed', 'wb') as out_file:
-        out_file.write(out_contents)
+    in_contents = args.broken_file.read()
+    out_contents = fix_contents(in_contents, args)
+    args.destination_file.write(out_contents)
 
     print(f"\033[32mRecovery completed. The new file should be fine.\033[0m")
 
