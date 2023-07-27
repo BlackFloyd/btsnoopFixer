@@ -3,7 +3,7 @@
 import sys
 
 
-def get_4_byte_int(data, index):
+def get_4_byte_int(data, index) -> int:
     return (data[index] << 24) + (data[index + 1] << 16) + (data[index + 2] << 8) + data[index + 3]
 
 
@@ -11,7 +11,7 @@ def dump(b):
     print(''.join('{:02x}'.format(x) for x in b))
 
 
-def fix_contents(in_contents):
+def fix_contents(in_contents) -> bytes:
     packet_idx = 8 + 4 + 4
     contents = in_contents[:packet_idx]
     previous_packet = None
@@ -36,21 +36,25 @@ def fix_contents(in_contents):
             time_signature = in_contents[packet_idx + 16:packet_idx + 24]
             packet_idx += included_length + 24
         else:
-            time_signature_bytes = 7                        # Try to match 7 bytes from the timestamp first
+            time_signature_bytes = 7
             print("\033[01m\033[36mBroken header: \033[0m", end="")
             dump(in_contents[packet_idx:packet_idx + 24])
             match = False
             match_idx = None
 
             while not match and time_signature_bytes > 1:
+                # Backwards seek
                 (match, match_idx) = match_time_signature(in_contents, packet_idx - previous_len, min(packet_idx, len(in_contents) - len(time_signature)), time_signature[:time_signature_bytes])
                 if not match:
+                    # Forwards seek
                     (match, match_idx) = match_time_signature(in_contents, packet_idx, len(in_contents) - len(time_signature), time_signature[:time_signature_bytes])
                     if not match:
+                        # None of the seeks yielded a result. Trying to match less bytes of the timestamp
                         time_signature_bytes -= 1
                     else:
                         if previous_packet is not None:
-                            contents += previous_packet  # Append previous packet as it seems to be okay.
+                            # Forwards seek succeeded - previous packet was okay
+                            contents += previous_packet
                             previous_packet = None
 
             if not match:
@@ -66,7 +70,7 @@ def fix_contents(in_contents):
     return contents
 
 
-def match_time_signature(data, start, end, time_signature):
+def match_time_signature(data, start, end, time_signature) -> (bool, int):
     match = False
     match_idx = None
     for i in range(start, end):
