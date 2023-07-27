@@ -2,35 +2,28 @@
 
 import sys
 import argparse
+from BTSnoop import *
 
 
-def get_4_byte_int(data, index) -> int:
-    return (data[index] << 24) + (data[index + 1] << 16) + (data[index + 2] << 8) + data[index + 3]
-
-
-def get_8_byte_int(data, index) -> int:
-    return (get_4_byte_int(data, index) << 32) + get_4_byte_int(data, index + 4)
-
-
-def dump(b):
+def dump(b: bytes):
     print(''.join('{:02x}'.format(x) for x in b))
 
 
-def fix_contents(in_contents, args) -> bytes:
-    packet_idx = 8 + 4 + 4
-    contents = in_contents[:packet_idx]
+def fix_contents(in_contents: bytes, args) -> bytes:
+    packet_idx = BTSNOOP_HEADER_SIZE
+    contents = in_contents[:BTSNOOP_HEADER_SIZE]
     previous_packet = None
     previous_len = 0
     previous_cumulative_drops = 0
     previous_time = 0
     packet_counter = 0
-    time_signature = in_contents[packet_idx + 16:packet_idx + 24]
+    time_signature = get_bytes(in_contents, BTSNOOP_HEADER_SIZE, BtSnoopPacketDataType.TIMESTAMP_MICROSECONDS)
     while packet_idx < len(in_contents):
         broken = False
-        original_length = get_4_byte_int(in_contents, packet_idx)
-        included_length = get_4_byte_int(in_contents, packet_idx + 4)
-        cumulative_drops = get_4_byte_int(in_contents, 12)
-        time = get_8_byte_int(in_contents, packet_idx + 16)
+        original_length = get_int(in_contents, packet_idx, BtSnoopPacketDataType.ORIGINAL_LENGTH)
+        included_length = get_int(in_contents, packet_idx, BtSnoopPacketDataType.INCLUDED_LENGTH)
+        cumulative_drops = get_int(in_contents, packet_idx, BtSnoopPacketDataType.CUMULATIVE_DROPS)
+        time = get_int(in_contents, packet_idx, BtSnoopPacketDataType.TIMESTAMP_MICROSECONDS)
 
         if included_length + packet_idx + 24 > len(in_contents):
             print(f"\033[01m\033[31mBroken packet ({packet_counter}): \033[0mIncluded packet length is greater than file size.")
@@ -48,16 +41,16 @@ def fix_contents(in_contents, args) -> bytes:
         if not broken:
             if previous_packet is not None:
                 contents += previous_packet
-            previous_packet = in_contents[packet_idx:packet_idx + included_length + 24]
+            previous_packet = get_packet_record(in_contents, packet_idx)
             previous_len = included_length
-            time_signature = in_contents[packet_idx + 16:packet_idx + 24]
+            time_signature = get_bytes(in_contents, BTSNOOP_HEADER_SIZE, BtSnoopPacketDataType.TIMESTAMP_MICROSECONDS)
             packet_idx += included_length + 24
             previous_cumulative_drops = cumulative_drops
             previous_time = time
         else:
             time_signature_bytes = 7
             print("\033[01m\033[36mBroken header: \033[0m", end="")
-            dump(in_contents[packet_idx:packet_idx + 24])
+            dump(get_packet_header(in_contents, packet_idx))
             match = False
             match_idx = None
 
@@ -89,7 +82,7 @@ def fix_contents(in_contents, args) -> bytes:
     return contents
 
 
-def match_time_signature(data, start, end, time_signature) -> (bool, int):
+def match_time_signature(data: bytes, start: int, end: int, time_signature: bytes) -> (bool, int):
     match = False
     match_idx = None
     for i in range(start, end):
