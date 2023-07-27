@@ -93,6 +93,8 @@ def repair_file():
     with open(f'{sys.argv[1]}.fixed', 'wb') as out_file:
         out_file.write(out_contents)
 
+    print(f"\033[32mRecovery completed. The new file should be fine.\033[0m")
+
 
 if __name__ == '__main__':
     repair_file()
