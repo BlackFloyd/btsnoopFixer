@@ -101,9 +101,9 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Fix broken BT Snoop files ")
     parser.add_argument('broken_file', help="Path of the broken BT Snoop log", type=argparse.FileType('rb'))
     parser.add_argument('destination_file', help="Path to write the fixed file to", type=argparse.FileType('wb'))
-    parser.add_argument('-l', '--length', help="Check length sanity", action="store_true")
-    parser.add_argument('-d', '--drop', help="Check drop sanity", action="store_true")
-    parser.add_argument('-t', '--time', help="Check time sanity", action="store_true")
+    parser.add_argument('-l', '--length', help="Check Length Sanity", action="store_true")
+    parser.add_argument('-d', '--drop', help="Check Drop Sanity", action="store_true")
+    parser.add_argument('-t', '--time', help="Check Time Sanity", action="store_true")
     return parser.parse_args()
 
 

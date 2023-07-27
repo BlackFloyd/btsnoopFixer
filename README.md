@@ -13,8 +13,19 @@ I'm just putting this out there in case it helps somebody ;)
 Actually nothing fancy:
 
 ```commandline
-$ python main.py <broken_btsnoop.log>
+$ python main.py <broken_btsnoop.log> <fixed_file.log>
 ```
+
+Furthermore, there are error detection methods available:
+
+```commandline
+  -l, --length      Check Length Sanity
+  -d, --drop        Check Drop Sanity
+  -t, --time        Check Time Sanity
+```
+
+These options are unsafe in rare cases but they may yield better results whenever this tool misses errors.
+See below for a detailed description.
 
 ## How it works
 
@@ -29,13 +40,31 @@ In that case the packet records won't line up anymore and whatever software is t
 
 ### How to detect it
 
-There are a few ways to detect those errors:
+There are a few ways to detect those errors. By default, only file breaking packet lengths will be detected and fixed.
 
-Current methods:
-* Check if the included packet size exceeds the file size
-* Check if the included packet size exceeds the original packet size
-* Check if cumulative drops decreased
-* Check timestamps for sanity
+#### Exceeding size check
+
+This check is always enabled as it is required to produce a readable file.
+Whenever a packet record would - according to its header - exceed the file, an error is detected.
+The check is performed by comparing the Included Length Field with the file size.
+
+#### Size Sanity
+
+The Size Sanity Check will report an error whenever the Included Length is reported to be bigger than the Original Length.
+This shouldn't really happen this way round, so this option is pretty safe to enable.
+
+#### Drop Sanity
+
+Drop Sanity will check for the Cumulative Drops reported by the packet record.
+This number should only increase throughout the file.
+This detection may theoretically be triggered by an overflow.
+Usually this shouldn't happen so it should be relatively safe to enable. 
+
+#### Time Sanity
+
+Time Sanity compares the current packet record's timestamp tho that of the last one.
+If the timestamp decreased, this check will report an error.
+This may however be triggered if the sniffing host updated its clock, so it hs some potential for false positives.
 
 ### What to do about it?
 
