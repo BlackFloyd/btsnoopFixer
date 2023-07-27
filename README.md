@@ -31,7 +31,7 @@ See below for a detailed description.
 
 ### The error this fixes
 
-BT Snoop files are pretty simple. They consist of a file header followed by the packets records.
+BT Snoop files are pretty simple. They consist of a file header followed by the packet records.
 Those records themselves consist of a header and the actual packet data.
 Because this data can vary in length, this length is being saved to the header of the packet record.
 If everything goes well (which it usually does), a program can navigate this file by using this recorded length.
