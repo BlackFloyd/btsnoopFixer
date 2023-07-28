@@ -75,8 +75,8 @@ def fix_contents(in_contents: bytes, args) -> bytes:
                             previous_packet = None
 
             if not match:
-                print("\033[31mBroken packet is non-recoverable.\033[0m")
-                sys.exit(2)
+                print("\033[31mBroken packet is non-recoverable. The resulting file will end before this packet.\033[0m")
+                return contents
             else:
                 print(f"\033[32mPresumed packet found with {time_signature_bytes} bytes matching the last time signature.\033[0m")
                 packet_idx = match_idx - 16
