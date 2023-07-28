@@ -58,17 +58,19 @@ def fix_contents(in_contents: bytes, args) -> bytes:
             dump(get_packet_header(in_contents, packet_idx))
             match: bool = False
             match_idx: int | None = None
+            forward_seek_offset: int = packet_idx
 
             while not match and time_signature_bytes > 1:
                 # Backwards seek
                 (match, match_idx) = match_time_signature(in_contents, packet_idx - previous_len, min(packet_idx, len(in_contents) - len(time_signature)), time_signature[:time_signature_bytes])
                 if not match:
                     # Forwards seek
-                    (match, match_idx) = match_time_signature(in_contents, packet_idx, len(in_contents) - len(time_signature), time_signature[:time_signature_bytes])
+                    (match, match_idx) = match_time_signature(in_contents, forward_seek_offset, len(in_contents) - len(time_signature), time_signature[:time_signature_bytes])
                     if match and match_idx - get_field_offset(BtSnoopPacketDataType.TIMESTAMP_MICROSECONDS) == packet_idx:
+                        forward_seek_offset = match_idx + 1
                         match = False
                         match_idx = None
-                    if not match:
+                    elif not match:
                         # None of the seeks yielded a result. Trying to match less bytes of the timestamp
                         time_signature_bytes -= 1
                     else:
