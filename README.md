@@ -19,17 +19,18 @@ $ python main.py <broken_btsnoop.log> <fixed_file.log>
 Furthermore, there are error detection methods available:
 
 ```commandline
-  -l, --length      Check Length Sanity
-  -d, --drop        Check Drop Sanity
-  -t, --time        Check Time Sanity
+-l, --length        Check Length Sanity
+-d, --drop          Check Drop Sanity
+-t, --time          Check Time Sanity
+-f, --forward-time  Forward Time Sanity
 ```
 
 These options are unsafe in rare cases, but they may yield better results whenever this tool misses errors.
 See below for a detailed description.
 
-## How it works
+## How It Works
 
-### The error this fixes
+### The Error This Fixes
 
 BT Snoop files are pretty simple. They consist of a file header followed by the packet records.
 Those records themselves consist of a header and the actual packet data.
@@ -38,11 +39,12 @@ If everything goes well (which it usually does), a program can navigate this fil
 If, however, something goes horribly wrong (like in my case), the file might be missing some data (or vice-versa).
 In that case the packet records won't line up anymore and whatever software is trying to read the file will just fail.
 
-### How to detect it
+### How To Detect It
 
 There are a few ways to detect those errors. By default, only file breaking packet lengths will be detected and fixed.
+In most cases none of the checks should yield any false positives, but as they might still do it, all but the Exceeding Size check are disabled by default.
 
-#### Exceeding size check
+#### Exceeding Size Check
 
 This check is always enabled as it is required to produce a readable file.
 Whenever a packet record would - according to its header - exceed the file, an error is detected.
@@ -62,11 +64,17 @@ Usually this shouldn't happen so it should be relatively safe to enable.
 
 #### Time Sanity
 
-Time Sanity compares the current packet record's timestamp tho that of the last one.
+Time Sanity compares the current packet record's timestamp to that of the last one.
 If the timestamp decreased, this check will report an error.
-This may however be triggered if the sniffing host updated its clock, so it hs some potential for false positives.
+This may however be triggered if the sniffing host updated its clock, so it has some potential for false positives.
 
-### What to do about it?
+#### Forward Time Sanity
+
+Forward Time Sanity also compares two timestamps,
+but this time it will report an error if more than one year elapsed between two packet records.
+This obviously may flag valid packet records as invalid, but it adds a great layer of protection against sneaky errors.
+
+### What To Do About It?
 
 If this tool encounters an error it will first assume the previous packet to be broken.
 It will then check for the last known good timestamp it has read and try to find a similar timestamp within the previous packet.

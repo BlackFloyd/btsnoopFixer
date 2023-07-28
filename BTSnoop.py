@@ -41,7 +41,7 @@ btSnoopPacketDataFields = {
 
 
 def get_n_byte_int(data: bytes, index: int, n: int) -> int:
-    value = 0
+    value: int = 0
     for i in range(n):
         value += data[index + i] << (8 * (n - i - 1))
     return value
@@ -67,12 +67,21 @@ def get_bytes(data: bytes, packet_index: int, field_type: BtSnoopPacketDataType,
     if 'offset' not in type_properties.keys():
         raise Exception("Type does not have a fixed offset.")
     if size is None:
-        size = type_properties.get('size')
+        size: int = type_properties.get('size')
     return data[packet_index + type_properties.get('offset'): packet_index + type_properties.get('offset') + size]
 
 
+def get_field_size(field_type: BtSnoopPacketDataType) -> int:
+    if field_type not in btSnoopPacketDataFields.keys():
+        raise Exception("Type not defined")
+    type_properties = btSnoopPacketDataFields.get(field_type)
+    if 'size' not in type_properties.keys():
+        raise Exception("Type does not have a fixed size.")
+    return type_properties.get('size')
+
+
 def get_packet_record(data: bytes, packet_index: int) -> bytes:
-    included_length = get_int(data, packet_index, BtSnoopPacketDataType.INCLUDED_LENGTH)
+    included_length: int = get_int(data, packet_index, BtSnoopPacketDataType.INCLUDED_LENGTH)
     return data[packet_index:packet_index + BTSNOOP_PACKET_HEADER_SIZE + included_length]
 
 
