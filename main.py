@@ -65,21 +65,24 @@ def fix_contents(in_contents: bytes, args) -> bytes:
                 if not match:
                     # Forwards seek
                     (match, match_idx) = match_time_signature(in_contents, packet_idx, len(in_contents) - len(time_signature), time_signature[:time_signature_bytes])
+                    if match and match_idx - get_field_offset(BtSnoopPacketDataType.TIMESTAMP_MICROSECONDS) == packet_idx:
+                        match = False
+                        match_idx = None
                     if not match:
                         # None of the seeks yielded a result. Trying to match less bytes of the timestamp
                         time_signature_bytes -= 1
                     else:
-                        if previous_packet is not None:
+                        if previous_packet is not None and match_idx > packet_idx + get_field_offset(BtSnoopPacketDataType.TIMESTAMP_MICROSECONDS):
                             # Forwards seek succeeded - previous packet was okay
                             contents += previous_packet
                             previous_packet = None
 
             if not match:
-                print("\033[31mBroken packet is non-recoverable. The resulting file will end before this packet.\033[0m")
+                print("\033[31mBroken packet record is non-recoverable. The resulting file will end before this packet.\033[0m")
                 return contents
             else:
                 print(f"\033[32mPresumed packet found with {time_signature_bytes} bytes matching the last time signature.\033[0m")
-                packet_idx = match_idx - 16
+                packet_idx = match_idx - get_field_offset(BtSnoopPacketDataType.TIMESTAMP_MICROSECONDS)
                 previous_packet = None
         packet_counter += 1
     if previous_packet is not None:

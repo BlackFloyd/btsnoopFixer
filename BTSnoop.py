@@ -80,6 +80,13 @@ def get_field_size(field_type: BtSnoopPacketDataType) -> int:
     return type_properties.get('size')
 
 
+def get_field_offset(field_type: BtSnoopPacketDataType) -> int:
+    if field_type not in btSnoopPacketDataFields.keys():
+        raise Exception("Type not defined")
+    type_properties = btSnoopPacketDataFields.get(field_type)
+    return type_properties.get('offset')
+
+
 def get_packet_record(data: bytes, packet_index: int) -> bytes:
     included_length: int = get_int(data, packet_index, BtSnoopPacketDataType.INCLUDED_LENGTH)
     return data[packet_index:packet_index + BTSNOOP_PACKET_HEADER_SIZE + included_length]
